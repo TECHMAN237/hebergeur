@@ -87,25 +87,39 @@ export default function App() {
       });
     });
 
+    list.sort((a, b) =>
+      a.file.name.localeCompare(b.file.name, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+
     return list;
   }, [folders, selectedFolder, searchQuery]);
 
   const copyAllUrls = async () => {
     if (displayedFiles.length === 0) return;
-    const allUrls = displayedFiles
-      .map(
-        ({ file }) =>
-          `${customBaseUrl.replace(/\/+$/, '')}${encodeURI(file.url)}`,
-      )
+    const cleanBase = customBaseUrl.replace(/\/+$/, '');
+
+    // Formats each visual on a new line: "visuel-1 : https://[domaine]/visuels/visuel-1.jpg"
+    const textLines = displayedFiles
+      .map(({ file }) => {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+        const title = nameWithoutExt.replace(/\s+/g, '-');
+        const rawPath = file.url.startsWith('/') ? file.url : `/${file.url}`;
+        const cleanPath = rawPath.replace(/\s+/g, '-');
+        const directUrl = `${cleanBase}${cleanPath}`;
+        return `${title} : ${directUrl}`;
+      })
       .join('\n');
 
     try {
-      await navigator.clipboard.writeText(allUrls);
+      await navigator.clipboard.writeText(textLines);
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
     } catch {
       const textArea = document.createElement('textarea');
-      textArea.value = allUrls;
+      textArea.value = textLines;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -333,22 +347,22 @@ export default function App() {
                 id="btn-copy-all"
                 type="button"
                 onClick={copyAllUrls}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition cursor-pointer ${
                   copiedAll
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
                     : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
                 }`}
-                title="Copier la liste complète des URLs affichées (pratique pour l'import par lot)"
+                title="Copier tous les liens au format texte 'visuel-1 : https://...'"
               >
                 {copiedAll ? (
                   <>
                     <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>{displayedFiles.length} URLs copiées !</span>
+                    <span>✅ Copié !</span>
                   </>
                 ) : (
                   <>
                     <Copy className="h-3.5 w-3.5 text-stone-500" />
-                    <span>Copier la liste ({displayedFiles.length})</span>
+                    <span>Copier tous les liens ({displayedFiles.length})</span>
                   </>
                 )}
               </button>
@@ -432,6 +446,47 @@ export default function App() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Section Header & Main "Copier tous les liens" Action Bar */}
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-xl border border-stone-200 bg-white p-4 shadow-xs">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-sm sm:text-base text-stone-900">
+                Liste des visuels ({displayedFiles.length})
+              </h2>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 font-mono text-[11px] text-stone-600">
+                {selectedFolder === 'all' ? 'tous les dossiers' : `/${selectedFolder}/`}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-stone-500">
+              Format de copie : <code className="font-mono text-stone-700 bg-stone-100 px-1.5 py-0.5 rounded text-[11px]">visuel-1 : https://[domaine]/visuels/visuel-1.jpg</code> (texte brut prêt à coller dans un chat).
+            </p>
+          </div>
+
+          <button
+            id="btn-copy-all-main"
+            type="button"
+            onClick={copyAllUrls}
+            disabled={displayedFiles.length === 0}
+            className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer shrink-0 ${
+              copiedAll
+                ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
+                : 'bg-stone-900 text-white hover:bg-stone-800 active:scale-[0.98]'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {copiedAll ? (
+              <>
+                <Check className="h-4 w-4 text-white" />
+                <span>✅ Copié !</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                <span>Copier tous les liens ({displayedFiles.length})</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* Gallery Grid */}

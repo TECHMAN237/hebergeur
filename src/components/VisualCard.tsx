@@ -190,7 +190,7 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
             id={`btn-copy-${file.name.replace(/\s+/g, '-')}`}
             type="button"
             onClick={copyUrl}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all cursor-pointer ${
               copied
                 ? 'bg-emerald-600 text-white'
                 : 'bg-stone-900 text-white hover:bg-stone-800 active:scale-[0.98]'
@@ -199,12 +199,12 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
             {copied ? (
               <>
                 <Check className="h-3.5 w-3.5" />
-                <span>URL copiée !</span>
+                <span>✅ Copié !</span>
               </>
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5" />
-                <span>Copier l'URL</span>
+                <span>Copier ce lien</span>
               </>
             )}
           </button>
