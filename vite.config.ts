@@ -28,22 +28,30 @@ function visualsScannerPlugin(): Plugin {
     for (const entry of entries) {
       if (entry.isDirectory() && entry.name !== 'assets') {
         const folderPath = path.join(publicDir, entry.name);
+        const seen = new Set<string>();
         const files = fs
           .readdirSync(folderPath, {withFileTypes: true})
           .filter(
             (f) =>
               f.isFile() &&
               /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f.name) &&
-              !f.name.startsWith('.'),
+              !f.name.startsWith('.') &&
+              !f.name.includes('-'),
           )
           .map((f) => {
             const stats = fs.statSync(path.join(folderPath, f.name));
+            const canonicalName = f.name.toLowerCase();
             return {
-              name: f.name,
-              url: `/${entry.name}/${f.name}`,
+              name: canonicalName,
+              url: `/${entry.name}/${canonicalName}`,
               sizeBytes: stats.size,
               updatedAt: stats.mtime.toISOString(),
             };
+          })
+          .filter((f) => {
+            if (seen.has(f.name)) return false;
+            seen.add(f.name);
+            return true;
           })
           .sort((a, b) =>
             a.name.localeCompare(b.name, undefined, {

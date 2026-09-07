@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Check, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Copy, Check, ExternalLink, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { VisualFile } from '../types';
 
 interface VisualCardProps {
@@ -13,13 +13,52 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
   const [copied, setCopied] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [retryLevel, setRetryLevel] = useState(0);
 
-  const rawUrl = `${baseUrl.replace(/\/+$/, '')}${file.url}`;
-  const encodedUrl = `${baseUrl.replace(/\/+$/, '')}${encodeURI(file.url)}`;
+  // Clean unencoded base URL and formatted size
+  const cleanBase = baseUrl.replace(/\/+$/, '');
+  const rawPath = file.url.startsWith('/') ? file.url : `/${file.url}`;
+  const encodedPath = encodeURI(decodeURI(rawPath));
+  const encodedUrl = `${cleanBase}${encodedPath}`;
+
+  const [currentImgSrc, setCurrentImgSrc] = useState<string>(() => encodedPath);
+
   const formattedSize =
     file.sizeBytes > 1024 * 1024
       ? `${(file.sizeBytes / (1024 * 1024)).toFixed(1)} Mo`
       : `${Math.round(file.sizeBytes / 1024)} Ko`;
+
+  const handleImgError = () => {
+    if (retryLevel === 0) {
+      // 1. Try with absolute URL
+      setRetryLevel(1);
+      setCurrentImgSrc(`${cleanBase}${encodedPath}`);
+    } else if (retryLevel === 1) {
+      // 2. Try swapping case: Visuel <-> visuel
+      setRetryLevel(2);
+      let alt = encodedPath;
+      if (alt.includes('Visuel')) {
+        alt = alt.replace(/Visuel/g, 'visuel');
+      } else if (alt.includes('visuel')) {
+        alt = alt.replace(/visuel/g, 'Visuel');
+      }
+      setCurrentImgSrc(alt);
+    } else if (retryLevel === 2) {
+      // 3. Try hyphenated alias (e.g. /visuels/visuel-10.jpg)
+      setRetryLevel(3);
+      const hyphenated = encodedPath.toLowerCase().replace(/%20|\s+/g, '-');
+      setCurrentImgSrc(hyphenated);
+    } else {
+      setImgError(true);
+    }
+  };
+
+  const handleManualRetry = () => {
+    setImgError(false);
+    setImgLoaded(false);
+    setRetryLevel(0);
+    setCurrentImgSrc(`${encodedPath}?t=${Date.now()}`);
+  };
 
   const copyUrl = async () => {
     try {
@@ -54,17 +93,30 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
 
         {imgError ? (
           <div className="flex flex-col items-center justify-center p-4 text-center text-stone-400">
-            <ImageIcon className="h-8 w-8 mb-1" />
-            <span className="text-xs">Image inaccessible</span>
+            <ImageIcon className="h-8 w-8 mb-1.5 text-stone-300" />
+            <span className="text-xs font-medium text-stone-600 mb-2">Chargement différé</span>
+            <button
+              type="button"
+              onClick={handleManualRetry}
+              className="flex items-center gap-1.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-700 px-2.5 py-1 text-[11px] font-medium transition cursor-pointer"
+            >
+              <RefreshCw className="h-3 w-3" />
+              <span>Réessayer</span>
+            </button>
           </div>
         ) : (
           <img
-            src={encodeURI(file.url)}
+            key={currentImgSrc}
+            src={currentImgSrc}
             alt={file.name}
             referrerPolicy="no-referrer"
-            loading="lazy"
-            onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
+            loading="eager"
+            decoding="async"
+            onLoad={() => {
+              setImgLoaded(true);
+              setImgError(false);
+            }}
+            onError={handleImgError}
             className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${
               imgLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -84,7 +136,7 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
         {/* Open Direct Raw Link Button */}
         <a
           id={`link-raw-${file.name.replace(/\s+/g, '-')}`}
-          href={encodeURI(file.url)}
+          href={encodedPath}
           target="_blank"
           rel="noreferrer"
           title="Ouvrir l'image brute en plein écran"

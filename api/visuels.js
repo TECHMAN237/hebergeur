@@ -31,12 +31,21 @@ export default function handler(req, res) {
   let files = [];
   for (const dir of candidateDirs) {
     if (fs.existsSync(dir)) {
+      const seen = new Set();
       const found = fs
         .readdirSync(dir)
         .filter(
           (f) =>
-            /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f) && !f.startsWith('.'),
+            /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f) &&
+            !f.startsWith('.') &&
+            !f.includes('-'),
         )
+        .map((f) => f.toLowerCase())
+        .filter((f) => {
+          if (seen.has(f)) return false;
+          seen.add(f);
+          return true;
+        })
         .sort((a, b) =>
           a.localeCompare(b, undefined, {
             numeric: true,
