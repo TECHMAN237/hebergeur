@@ -1,0 +1,8 @@
+{
+  "name": "Hébergeur de Visuels Marketing",
+  "description": "Hébergement public direct de visuels marketing et médias pour Metricool et réseaux sociaux.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

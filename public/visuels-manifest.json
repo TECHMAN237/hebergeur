@@ -1,0 +1,235 @@
+{
+  "folders": [
+    {
+      "name": "visuels-lancement",
+      "displayName": "visuels lancement",
+      "folderPath": "/visuels-lancement",
+      "files": [
+        {
+          "name": "1.png",
+          "url": "/visuels-lancement/1.png",
+          "sizeBytes": 1872585,
+          "updatedAt": "2026-09-07T02:03:30.891Z"
+        },
+        {
+          "name": "2.jpg",
+          "url": "/visuels-lancement/2.jpg",
+          "sizeBytes": 943458,
+          "updatedAt": "2026-09-07T02:03:30.895Z"
+        },
+        {
+          "name": "visuel 1.jpg",
+          "url": "/visuels-lancement/visuel 1.jpg",
+          "sizeBytes": 996102,
+          "updatedAt": "2026-09-07T02:03:30.881Z"
+        },
+        {
+          "name": "visuel 2.jpg",
+          "url": "/visuels-lancement/visuel 2.jpg",
+          "sizeBytes": 1027876,
+          "updatedAt": "2026-09-07T02:03:30.906Z"
+        },
+        {
+          "name": "visuel 3.jpg",
+          "url": "/visuels-lancement/visuel 3.jpg",
+          "sizeBytes": 997982,
+          "updatedAt": "2026-09-07T02:03:30.901Z"
+        },
+        {
+          "name": "visuel 4.jpg",
+          "url": "/visuels-lancement/visuel 4.jpg",
+          "sizeBytes": 937265,
+          "updatedAt": "2026-09-07T02:03:30.899Z"
+        },
+        {
+          "name": "visuel 5.jpg",
+          "url": "/visuels-lancement/visuel 5.jpg",
+          "sizeBytes": 977826,
+          "updatedAt": "2026-09-07T02:03:30.909Z"
+        },
+        {
+          "name": "visuel 6.jpg",
+          "url": "/visuels-lancement/visuel 6.jpg",
+          "sizeBytes": 924824,
+          "updatedAt": "2026-09-07T02:03:30.904Z"
+        },
+        {
+          "name": "visuel 7.jpg",
+          "url": "/visuels-lancement/visuel 7.jpg",
+          "sizeBytes": 959815,
+          "updatedAt": "2026-09-07T02:03:30.896Z"
+        },
+        {
+          "name": "visuel 8.jpg",
+          "url": "/visuels-lancement/visuel 8.jpg",
+          "sizeBytes": 877900,
+          "updatedAt": "2026-09-07T02:03:30.899Z"
+        },
+        {
+          "name": "Visuel 10.jpg",
+          "url": "/visuels-lancement/Visuel 10.jpg",
+          "sizeBytes": 971590,
+          "updatedAt": "2026-09-07T02:03:30.881Z"
+        },
+        {
+          "name": "Visuel 11.jpg",
+          "url": "/visuels-lancement/Visuel 11.jpg",
+          "sizeBytes": 924896,
+          "updatedAt": "2026-09-07T02:03:30.902Z"
+        },
+        {
+          "name": "visuel 12.jpg",
+          "url": "/visuels-lancement/visuel 12.jpg",
+          "sizeBytes": 993128,
+          "updatedAt": "2026-09-07T02:03:30.909Z"
+        },
+        {
+          "name": "Visuel 13.jpg",
+          "url": "/visuels-lancement/Visuel 13.jpg",
+          "sizeBytes": 932259,
+          "updatedAt": "2026-09-07T02:03:30.892Z"
+        },
+        {
+          "name": "Visuel 15.jpg",
+          "url": "/visuels-lancement/Visuel 15.jpg",
+          "sizeBytes": 877741,
+          "updatedAt": "2026-09-07T02:03:30.888Z"
+        },
+        {
+          "name": "Visuel 16.jpg",
+          "url": "/visuels-lancement/Visuel 16.jpg",
+          "sizeBytes": 910930,
+          "updatedAt": "2026-09-07T02:03:30.906Z"
+        },
+        {
+          "name": "visuel 17.jpg",
+          "url": "/visuels-lancement/visuel 17.jpg",
+          "sizeBytes": 859967,
+          "updatedAt": "2026-09-07T02:03:30.884Z"
+        },
+        {
+          "name": "visuel 19.jpg",
+          "url": "/visuels-lancement/visuel 19.jpg",
+          "sizeBytes": 917793,
+          "updatedAt": "2026-09-07T02:03:30.884Z"
+        }
+      ]
+    },
+    {
+      "name": "visuels",
+      "displayName": "visuels",
+      "folderPath": "/visuels",
+      "files": [
+        {
+          "name": "1.png",
+          "url": "/visuels/1.png",
+          "sizeBytes": 1872585,
+          "updatedAt": "2026-09-07T02:03:30.891Z"
+        },
+        {
+          "name": "2.jpg",
+          "url": "/visuels/2.jpg",
+          "sizeBytes": 943458,
+          "updatedAt": "2026-09-07T02:03:30.895Z"
+        },
+        {
+          "name": "visuel 1.jpg",
+          "url": "/visuels/visuel 1.jpg",
+          "sizeBytes": 996102,
+          "updatedAt": "2026-09-07T02:03:30.881Z"
+        },
+        {
+          "name": "visuel 2.jpg",
+          "url": "/visuels/visuel 2.jpg",
+          "sizeBytes": 1027876,
+          "updatedAt": "2026-09-07T02:03:30.906Z"
+        },
+        {
+          "name": "visuel 3.jpg",
+          "url": "/visuels/visuel 3.jpg",
+          "sizeBytes": 997982,
+          "updatedAt": "2026-09-07T02:03:30.901Z"
+        },
+        {
+          "name": "visuel 4.jpg",
+          "url": "/visuels/visuel 4.jpg",
+          "sizeBytes": 937265,
+          "updatedAt": "2026-09-07T02:03:30.899Z"
+        },
+        {
+          "name": "visuel 5.jpg",
+          "url": "/visuels/visuel 5.jpg",
+          "sizeBytes": 977826,
+          "updatedAt": "2026-09-07T02:03:30.909Z"
+        },
+        {
+          "name": "visuel 6.jpg",
+          "url": "/visuels/visuel 6.jpg",
+          "sizeBytes": 924824,
+          "updatedAt": "2026-09-07T02:03:30.904Z"
+        },
+        {
+          "name": "visuel 7.jpg",
+          "url": "/visuels/visuel 7.jpg",
+          "sizeBytes": 959815,
+          "updatedAt": "2026-09-07T02:03:30.896Z"
+        },
+        {
+          "name": "visuel 8.jpg",
+          "url": "/visuels/visuel 8.jpg",
+          "sizeBytes": 877900,
+          "updatedAt": "2026-09-07T02:03:30.899Z"
+        },
+        {
+          "name": "Visuel 10.jpg",
+          "url": "/visuels/Visuel 10.jpg",
+          "sizeBytes": 971590,
+          "updatedAt": "2026-09-07T02:03:30.881Z"
+        },
+        {
+          "name": "Visuel 11.jpg",
+          "url": "/visuels/Visuel 11.jpg",
+          "sizeBytes": 924896,
+          "updatedAt": "2026-09-07T02:03:30.902Z"
+        },
+        {
+          "name": "visuel 12.jpg",
+          "url": "/visuels/visuel 12.jpg",
+          "sizeBytes": 993128,
+          "updatedAt": "2026-09-07T02:03:30.909Z"
+        },
+        {
+          "name": "Visuel 13.jpg",
+          "url": "/visuels/Visuel 13.jpg",
+          "sizeBytes": 932259,
+          "updatedAt": "2026-09-07T02:03:30.892Z"
+        },
+        {
+          "name": "Visuel 15.jpg",
+          "url": "/visuels/Visuel 15.jpg",
+          "sizeBytes": 877741,
+          "updatedAt": "2026-09-07T02:03:30.888Z"
+        },
+        {
+          "name": "Visuel 16.jpg",
+          "url": "/visuels/Visuel 16.jpg",
+          "sizeBytes": 910930,
+          "updatedAt": "2026-09-07T02:03:30.906Z"
+        },
+        {
+          "name": "visuel 17.jpg",
+          "url": "/visuels/visuel 17.jpg",
+          "sizeBytes": 859967,
+          "updatedAt": "2026-09-07T02:03:30.884Z"
+        },
+        {
+          "name": "visuel 19.jpg",
+          "url": "/visuels/visuel 19.jpg",
+          "sizeBytes": 917793,
+          "updatedAt": "2026-09-07T02:03:30.884Z"
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-09-07T02:04:16.283Z"
+}
