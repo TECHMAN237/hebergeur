@@ -29,36 +29,46 @@ function visualsScannerPlugin(): Plugin {
       if (entry.isDirectory() && entry.name !== 'assets') {
         const folderPath = path.join(publicDir, entry.name);
         const seen = new Set<string>();
-        const files = fs
+        const rawFiles = fs
           .readdirSync(folderPath, {withFileTypes: true})
           .filter(
             (f) =>
               f.isFile() &&
               /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f.name) &&
-              !f.name.startsWith('.') &&
-              !f.name.includes('-'),
-          )
-          .map((f) => {
-            const stats = fs.statSync(path.join(folderPath, f.name));
-            const canonicalName = f.name.toLowerCase();
-            return {
-              name: canonicalName,
-              url: `/${entry.name}/${canonicalName}`,
+              !f.name.startsWith('.'),
+          );
+
+        const files: Array<{
+          name: string;
+          url: string;
+          sizeBytes: number;
+          updatedAt: string;
+        }> = [];
+
+        for (const f of rawFiles) {
+          const stats = fs.statSync(path.join(folderPath, f.name));
+          const ext = path.extname(f.name).toLowerCase();
+          const base = path.basename(f.name, ext).toLowerCase().replace(/[\s_]+/g, '-');
+          const canonicalKey = `${base}${ext}`;
+
+          if (!seen.has(canonicalKey)) {
+            seen.add(canonicalKey);
+            // Ensure URL uses web-safe canonical key (e.g. /visuels/visuel-3.jpg)
+            files.push({
+              name: canonicalKey,
+              url: `/${entry.name}/${canonicalKey}`,
               sizeBytes: stats.size,
               updatedAt: stats.mtime.toISOString(),
-            };
-          })
-          .filter((f) => {
-            if (seen.has(f.name)) return false;
-            seen.add(f.name);
-            return true;
-          })
-          .sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, {
-              numeric: true,
-              sensitivity: 'base',
-            }),
-          );
+            });
+          }
+        }
+
+        files.sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          }),
+        );
 
         folders.push({
           name: entry.name,

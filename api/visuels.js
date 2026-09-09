@@ -32,26 +32,32 @@ export default function handler(req, res) {
   for (const dir of candidateDirs) {
     if (fs.existsSync(dir)) {
       const seen = new Set();
-      const found = fs
+      const rawEntries = fs
         .readdirSync(dir)
         .filter(
           (f) =>
             /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f) &&
-            !f.startsWith('.') &&
-            !f.includes('-'),
-        )
-        .map((f) => f.toLowerCase())
-        .filter((f) => {
-          if (seen.has(f)) return false;
-          seen.add(f);
-          return true;
-        })
-        .sort((a, b) =>
-          a.localeCompare(b, undefined, {
-            numeric: true,
-            sensitivity: 'base',
-          }),
+            !f.startsWith('.'),
         );
+
+      const found = [];
+      for (const f of rawEntries) {
+        const ext = path.extname(f).toLowerCase();
+        const base = path.basename(f, ext).toLowerCase().replace(/[\s_]+/g, '-');
+        const canonicalKey = `${base}${ext}`;
+        if (!seen.has(canonicalKey)) {
+          seen.add(canonicalKey);
+          found.push(canonicalKey);
+        }
+      }
+
+      found.sort((a, b) =>
+        a.localeCompare(b, undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        }),
+      );
+
       if (found.length > 0) {
         files = found;
         break;
@@ -61,19 +67,26 @@ export default function handler(req, res) {
 
   // Fallback to manifest if running in isolated serverless bundle
   if (files.length === 0) {
-    try {
-      const manifestPath = path.join(process.cwd(), 'public', 'visuels-manifest.json');
+    const manifestCandidates = [
+      path.join(process.cwd(), 'public', 'visuels-manifest.json'),
+      path.join(process.cwd(), 'dist', 'visuels-manifest.json'),
+      path.join(process.cwd(), 'visuels-manifest.json'),
+    ];
+    for (const manifestPath of manifestCandidates) {
       if (fs.existsSync(manifestPath)) {
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-        const folder =
-          manifest.folders?.find((f) => f.name === 'visuels') ||
-          manifest.folders?.[0];
-        if (folder?.files) {
-          files = folder.files.map((f) => f.name);
+        try {
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const folder =
+            manifest.folders?.find((f) => f.name === 'visuels') ||
+            manifest.folders?.[0];
+          if (folder?.files) {
+            files = folder.files.map((f) => f.name);
+            break;
+          }
+        } catch {
+          // ignore
         }
       }
-    } catch {
-      // ignore
     }
   }
 

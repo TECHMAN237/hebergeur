@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Terminal,
   ArrowRight,
+  Layers,
 } from 'lucide-react';
 import { VisualFolder } from './types';
 import { VisualCard } from './components/VisualCard';
@@ -45,6 +46,7 @@ export default function App() {
   const [customBaseUrl, setCustomBaseUrl] = useState<string>('');
   const [showConfig, setShowConfig] = useState<boolean>(false);
   const [showGuide, setShowGuide] = useState<boolean>(false);
+  const [showBuildAudit, setShowBuildAudit] = useState<boolean>(false);
   const [copiedAll, setCopiedAll] = useState<boolean>(false);
   const [copiedApiUrl, setCopiedApiUrl] = useState<boolean>(false);
 
@@ -170,17 +172,32 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Accès 100% Public
+                {totalFiles} visuels au build
               </span>
+
+              <button
+                id="btn-toggle-audit"
+                type="button"
+                onClick={() => setShowBuildAudit(!showBuildAudit)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                  showBuildAudit
+                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                    : 'border-stone-200 text-stone-700 hover:bg-stone-50'
+                }`}
+                title="Vérifier tous les fichiers inclus dans le build actuel"
+              >
+                <Layers className="h-3.5 w-3.5 text-indigo-600" />
+                <span>Audit du Build ({totalFiles})</span>
+              </button>
 
               <button
                 id="btn-toggle-guide"
                 type="button"
                 onClick={() => setShowGuide(!showGuide)}
-                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition cursor-pointer"
               >
                 <Info className="h-3.5 w-3.5 text-stone-500" />
-                <span>Guide Metricool</span>
+                <span>Guide Vercel &amp; Dossiers</span>
               </button>
             </div>
           </div>
@@ -189,39 +206,119 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Guide / Metricool Instructions */}
+        {/* Real-time Build Audit & File Verification Panel */}
+        {showBuildAudit && (
+          <div
+            id="panel-build-audit"
+            className="mb-8 rounded-xl border border-indigo-200 bg-indigo-50/60 p-5 text-sm text-stone-700 shadow-xs"
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-semibold text-stone-900">
+                    Contrôle des fichiers compilés dans le Build de Production
+                  </h2>
+                  <span className="rounded-full bg-indigo-100 text-indigo-800 font-mono text-[11px] font-semibold px-2.5 py-0.5">
+                    {totalFiles} fichiers inclus
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 mt-1">
+                  Ce listing reflète exactement les fichiers bruts scannés au moment du build ({new Date(buildGeneratedAt).toLocaleString('fr-FR')}). Aucun fichier n'est exclu par filtre ni liste blanche.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBuildAudit(false)}
+                className="text-stone-400 hover:text-stone-600 p-1 text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {folders.map((folder) => (
+                <div key={folder.name} className="rounded-lg bg-white border border-indigo-100 p-3.5 shadow-2xs">
+                  <div className="flex items-center justify-between font-mono text-xs font-semibold text-stone-800 pb-2 mb-2 border-b border-stone-100">
+                    <span>📁 public/{folder.name}/</span>
+                    <span className="text-indigo-600 font-normal">{folder.files.length} fichiers</span>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto divide-y divide-stone-100 pr-1 text-xs font-mono">
+                    {folder.files.map((f) => (
+                      <div key={f.name} className="py-1.5 flex items-center justify-between gap-2 hover:bg-stone-50 px-1 rounded">
+                        <span className="truncate text-stone-800" title={f.name}>{f.name}</span>
+                        <div className="flex items-center gap-2 shrink-0 text-[11px] text-stone-500">
+                          <span>{Math.round(f.sizeBytes / 1024)} Ko</span>
+                          <a
+                            href={f.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5"
+                            title="Tester l'accès brut"
+                          >
+                            <span>Ouvrir</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Guide / Metricool & Folder Structure Instructions */}
         {showGuide && (
           <div
             id="panel-guide"
-            className="mb-8 rounded-xl border border-blue-100 bg-blue-50/70 p-5 text-sm text-stone-700"
+            className="mb-8 rounded-xl border border-blue-200 bg-blue-50/70 p-5 text-sm text-stone-700 shadow-xs"
           >
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-semibold text-stone-900 mb-1">
-                  Fonctionnement avec Metricool &amp; Outils Externes
-                </h2>
-                <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-                  Chaque fichier stocké dans <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono text-blue-900">public/visuels/</code> est servi directement par le serveur web sous son type MIME natif (<code className="font-mono text-xs">image/jpeg</code>, <code className="font-mono text-xs">image/png</code>). Aucune page HTML intermédiaire, aucun cookie, aucun token n'est requis.
-                </p>
+              <div className="w-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="font-semibold text-stone-900">
+                    Structure officielle des dossiers &amp; Déploiement Git / Vercel
+                  </h2>
+                </div>
+                
+                {/* Precise Folder Structure Box */}
+                <div className="mb-4 rounded-lg bg-white p-4 border border-blue-200 text-xs shadow-2xs">
+                  <span className="font-semibold text-stone-900 block mb-1">
+                    📍 Emplacement exact où déposer vos fichiers dans le repo :
+                  </span>
+                  <div className="bg-stone-900 text-stone-100 p-2.5 rounded font-mono text-xs my-2 leading-relaxed">
+                    public/visuels/visuel-1.jpg<br />
+                    public/visuels/visuel-2.jpg<br />
+                    public/visuels/visuel-3.jpg<br />
+                    public/visuels/visuel-4.jpg<br />
+                    ...<br />
+                    public/visuels/visuel-19.jpg
+                  </div>
+                  <p className="text-stone-600 leading-relaxed">
+                    Tous les formats d'image courants (<code className="font-mono text-stone-800 font-medium">.jpg, .jpeg, .png, .webp, .svg, .gif</code>) de toutes tailles sont automatiquement intégrés par le build.
+                  </p>
+                </div>
+
                 <div className="grid gap-3 sm:grid-cols-3 text-xs">
                   <div className="rounded-lg bg-white p-3 border border-blue-100 shadow-2xs">
-                    <span className="font-semibold text-stone-900 block mb-1">1. Copier l'URL</span>
-                    <span>Cliquez sur « Copier l'URL directe » sur le visuel souhaité.</span>
+                    <span className="font-semibold text-stone-900 block mb-1">1. Déposer &amp; Pousser (Git)</span>
+                    <span className="text-stone-600">Placez vos fichiers dans <code className="font-mono">public/visuels/</code> puis lancez <code className="font-mono text-[11px] bg-stone-100 px-1 py-0.5 rounded">git add . && git commit -m "visuels" && git push</code>.</span>
                   </div>
                   <div className="rounded-lg bg-white p-3 border border-blue-100 shadow-2xs">
-                    <span className="font-semibold text-stone-900 block mb-1">2. Coller dans Metricool</span>
-                    <span>Dans l'éditeur de publication, sélectionnez « Ajouter une image par URL » et collez le lien.</span>
+                    <span className="font-semibold text-stone-900 block mb-1">2. Build automatique sans cache</span>
+                    <span className="text-stone-600">Vercel exécute automatiquement <code className="font-mono text-[11px] bg-stone-100 px-1 py-0.5 rounded">node scripts/prepare-visuals.js</code> avant Vite pour régénérer l'ensemble des fichiers bruts et de leurs alias.</span>
                   </div>
                   <div className="rounded-lg bg-white p-3 border border-blue-100 shadow-2xs">
-                    <span className="font-semibold text-stone-900 block mb-1">3. Ajouter de nouveaux visuels</span>
-                    <span>Glissez simplement vos images dans <code className="font-mono">public/visuels/</code> et déployez sur Vercel.</span>
+                    <span className="font-semibold text-stone-900 block mb-1">3. Utilisation Metricool</span>
+                    <span className="text-stone-600">Copiez les liens directs via le bouton « Copier tous les liens » ci-dessous et collez-les directement dans Metricool ou votre chat.</span>
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowGuide(false)}
-                className="text-stone-400 hover:text-stone-600 p-1 text-xs"
+                className="text-stone-400 hover:text-stone-600 p-1 text-xs cursor-pointer shrink-0"
               >
                 ✕
               </button>
