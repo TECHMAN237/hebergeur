@@ -36,8 +36,16 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
       setRetryLevel(1);
       setCurrentImgSrc(`${cleanBase}${encodedPath}`);
     } else if (retryLevel === 1) {
-      // 2. Try swapping case: Visuel <-> visuel
+      // 2. Try primary /visuels/ folder or dotted alias (13.50.33)
       setRetryLevel(2);
+      if (encodedPath.includes('13-50-33')) {
+        setCurrentImgSrc(encodedPath.replace('13-50-33', '13.50.33'));
+      } else {
+        setCurrentImgSrc(`/visuels/${file.name}`);
+      }
+    } else if (retryLevel === 2) {
+      // 3. Try swapping case: Visuel <-> visuel
+      setRetryLevel(3);
       let alt = encodedPath;
       if (alt.includes('Visuel')) {
         alt = alt.replace(/Visuel/g, 'visuel');
@@ -45,9 +53,9 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
         alt = alt.replace(/visuel/g, 'Visuel');
       }
       setCurrentImgSrc(alt);
-    } else if (retryLevel === 2) {
-      // 3. Try hyphenated alias (e.g. /visuels/visuel-10.jpg)
-      setRetryLevel(3);
+    } else if (retryLevel === 3) {
+      // 4. Try hyphenated alias (e.g. /visuels/visuel-10.jpg)
+      setRetryLevel(4);
       const hyphenated = encodedPath.toLowerCase().replace(/%20|\s+/g, '-');
       setCurrentImgSrc(hyphenated);
     } else {

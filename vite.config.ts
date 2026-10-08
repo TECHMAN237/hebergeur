@@ -30,6 +30,8 @@ function visualsScannerPlugin(): Plugin {
       const targetDirs = ['visuels', 'visuels-lancement'];
       const alternateSources = [
         rootDir,
+        path.join(publicDir, 'visuels'),
+        path.join(publicDir, 'visuels-lancement'),
         path.join(rootDir, 'visuels'),
         path.join(rootDir, 'assets', 'visuels'),
         path.join(rootDir, 'src', 'assets', 'visuels'),
@@ -168,8 +170,45 @@ function visualsScannerPlugin(): Plugin {
     return folders;
   }
 
+  function writeManifestAndApiData() {
+    try {
+      const folders = scanVisuals();
+      const manifestPayload = JSON.stringify(
+        {folders, generatedAt: new Date().toISOString()},
+        null,
+        2,
+      );
+      const manifestPath = path.resolve(
+        process.cwd(),
+        'public',
+        'visuels-manifest.json',
+      );
+      fs.writeFileSync(manifestPath, manifestPayload, 'utf8');
+
+      const targetFolder =
+        folders.find((f) => f.name === 'visuels') || folders[0];
+      const files = targetFolder ? targetFolder.files.map((f) => f.name) : [];
+      const apiDir = path.resolve(process.cwd(), 'api');
+      if (!fs.existsSync(apiDir)) {
+        fs.mkdirSync(apiDir, {recursive: true});
+      }
+      fs.writeFileSync(
+        path.join(apiDir, 'visuels-data.js'),
+        `// Auto-generated at build time\nexport const visualFiles = ${JSON.stringify(files, null, 2)};\n`,
+        'utf8',
+      );
+      return {folders, manifestPayload};
+    } catch (err) {
+      console.error('Failed to write visuels-manifest.json', err);
+      return null;
+    }
+  }
+
   return {
     name: 'vite-plugin-visuals-scanner',
+    configResolved() {
+      writeManifestAndApiData();
+    },
     resolveId(id: string) {
       if (id === virtualModuleId) {
         return resolvedVirtualModuleId;
@@ -235,37 +274,51 @@ function visualsScannerPlugin(): Plugin {
       });
     },
     buildStart() {
+      writeManifestAndApiData();
+    },
+    closeBundle() {
       try {
-        const folders = scanVisuals();
-        const manifestPath = path.resolve(
-          process.cwd(),
-          'public',
-          'visuels-manifest.json',
-        );
-        fs.writeFileSync(
-          manifestPath,
-          JSON.stringify(
-            {folders, generatedAt: new Date().toISOString()},
-            null,
-            2,
-          ),
-        );
+        const result = writeManifestAndApiData();
+        const distDir = path.resolve(process.cwd(), 'dist');
+        const publicDir = path.resolve(process.cwd(), 'public');
+        if (!fs.existsSync(distDir)) return;
 
-        // Update api/visuels-data.js so Vercel's serverless function bundles the exact file list
-        const targetFolder =
-          folders.find((f) => f.name === 'visuels') || folders[0];
-        const files = targetFolder ? targetFolder.files.map((f) => f.name) : [];
-        const apiDir = path.resolve(process.cwd(), 'api');
-        if (!fs.existsSync(apiDir)) {
-          fs.mkdirSync(apiDir, {recursive: true});
+        if (result) {
+          fs.writeFileSync(
+            path.join(distDir, 'visuels-manifest.json'),
+            result.manifestPayload,
+            'utf8',
+          );
         }
-        fs.writeFileSync(
-          path.join(apiDir, 'visuels-data.js'),
-          `// Auto-generated at build time\nexport const visualFiles = ${JSON.stringify(files, null, 2)};\n`,
-          'utf8',
-        );
+
+        for (const subDir of ['visuels', 'visuels-lancement']) {
+          const srcSub = path.join(publicDir, subDir);
+          const dstSub = path.join(distDir, subDir);
+          if (!fs.existsSync(srcSub)) continue;
+          if (!fs.existsSync(dstSub)) {
+            fs.mkdirSync(dstSub, {recursive: true});
+          }
+          for (const f of fs.readdirSync(srcSub)) {
+            const srcFile = path.join(srcSub, f);
+            if (!fs.statSync(srcFile).isFile()) continue;
+            const dstFile = path.join(dstSub, f);
+            if (!fs.existsSync(dstFile)) {
+              fs.copyFileSync(srcFile, dstFile);
+            }
+            // Also create dotted alias for 13-50-33 -> 13.50.33 so legacy links work
+            if (f.includes('13-50-33')) {
+              const dottedAlias = path.join(
+                dstSub,
+                f.replace('13-50-33', '13.50.33'),
+              );
+              if (!fs.existsSync(dottedAlias)) {
+                fs.copyFileSync(srcFile, dottedAlias);
+              }
+            }
+          }
+        }
       } catch (err) {
-        console.error('Failed to write visuels-manifest.json', err);
+        console.error('Error in closeBundle visuals sync:', err);
       }
     },
   };

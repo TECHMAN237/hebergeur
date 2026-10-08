@@ -21,11 +21,69 @@ import {
   ArrowRight,
   Layers,
 } from 'lucide-react';
-import { VisualFolder } from './types';
+import { VisualFolder, VisualFile } from './types';
 import { VisualCard } from './components/VisualCard';
 
+const PRIORITY_HEAD_FILES: VisualFile[] = [
+  {
+    name: 'whatsapp-image-2026-09-30-at-13-50-33-1.jpeg',
+    url: '/visuels/whatsapp-image-2026-09-30-at-13-50-33-1.jpeg',
+    sizeBytes: 173118,
+    updatedAt: '2026-10-08T01:09:59.708Z',
+  },
+  {
+    name: 'whatsapp-image-2026-09-30-at-13-50-33.jpeg',
+    url: '/visuels/whatsapp-image-2026-09-30-at-13-50-33.jpeg',
+    sizeBytes: 375502,
+    updatedAt: '2026-10-08T01:09:59.715Z',
+  },
+];
+
+function ensurePriorityVisuals(inputFolders: VisualFolder[]): VisualFolder[] {
+  const baseFolders: VisualFolder[] =
+    inputFolders && inputFolders.length > 0
+      ? inputFolders.map((f) => ({ ...f, files: [...f.files] }))
+      : [
+          {
+            name: 'visuels',
+            displayName: 'visuels',
+            folderPath: '/visuels',
+            files: [],
+          },
+        ];
+
+  return baseFolders.map((folder) => {
+    const seen = new Set(folder.files.map((f) => f.name.toLowerCase()));
+    const missingPriority = PRIORITY_HEAD_FILES.filter(
+      (pf) => !seen.has(pf.name.toLowerCase()),
+    ).map((pf) => ({
+      ...pf,
+      url: `/${folder.name}/${pf.name}`,
+    }));
+
+    const combined = [...missingPriority, ...folder.files];
+    combined.sort((a, b) => {
+      const aPrio = a.name.toLowerCase().startsWith('whatsapp-image-');
+      const bPrio = b.name.toLowerCase().startsWith('whatsapp-image-');
+      if (aPrio && !bPrio) return -1;
+      if (!aPrio && bPrio) return 1;
+      return a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
+
+    return {
+      ...folder,
+      files: combined,
+    };
+  });
+}
+
 export default function App() {
-  const [folders, setFolders] = useState<VisualFolder[]>(importedFolders || []);
+  const [folders, setFolders] = useState<VisualFolder[]>(() =>
+    ensurePriorityVisuals(importedFolders || []),
+  );
   const [selectedFolder, setSelectedFolder] = useState<string>(() => {
     if (
       typeof window !== 'undefined' &&
@@ -69,7 +127,7 @@ export default function App() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.folders) && data.folders.length > 0) {
-          setFolders(data.folders);
+          setFolders(ensurePriorityVisuals(data.folders));
         }
       })
       .catch(() => {});

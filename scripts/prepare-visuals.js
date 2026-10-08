@@ -37,6 +37,8 @@ export function sortVisualNames(list) {
 // 1. Import any visuals placed at project root `/` or alternate folders
 const alternateSources = [
   rootDir,
+  path.join(publicDir, 'visuels'),
+  path.join(publicDir, 'visuels-lancement'),
   path.join(rootDir, 'visuels'),
   path.join(rootDir, 'assets', 'visuels'),
   path.join(rootDir, 'src', 'assets', 'visuels'),
@@ -69,6 +71,7 @@ for (const subDir of targetDirs) {
 
 // 2. Normalize all files in public/visuels and public/visuels-lancement to clean Vercel-safe filenames
 let primaryVisualsList = [];
+const manifestFolders = [];
 
 for (const subDir of targetDirs) {
   const dirPath = path.join(publicDir, subDir);
@@ -93,7 +96,6 @@ for (const subDir of targetDirs) {
       if (!fs.existsSync(canonicalPath)) {
         fs.copyFileSync(srcPath, canonicalPath);
       }
-      // Remove non-canonical duplicate (spaces, parens, uppercase) to avoid Git/Vercel case collisions
       try {
         fs.unlinkSync(srcPath);
       } catch {
@@ -117,6 +119,21 @@ for (const subDir of targetDirs) {
     primaryVisualsList = finalFiles;
   }
 
+  manifestFolders.push({
+    name: subDir,
+    displayName: subDir.replace(/[-_]/g, ' '),
+    folderPath: `/${subDir}`,
+    files: finalFiles.map((fname) => {
+      const st = fs.statSync(path.join(dirPath, fname));
+      return {
+        name: fname,
+        url: `/${subDir}/${fname}`,
+        sizeBytes: st.size,
+        updatedAt: st.mtime.toISOString(),
+      };
+    }),
+  });
+
   console.log(
     `[sync] Dossier public/${subDir} prêt pour Vercel : ${finalFiles.length} visuels normalisés.`,
   );
@@ -132,7 +149,18 @@ if (fs.existsSync(legacyStaticApiDir)) {
   }
 }
 
-// 4. Write api/visuels-data.js so Vercel's serverless function always bundles the exact list
+// 4. Write public/visuels-manifest.json and api/visuels-data.js
+const manifestPath = path.join(publicDir, 'visuels-manifest.json');
+fs.writeFileSync(
+  manifestPath,
+  JSON.stringify(
+    { folders: manifestFolders, generatedAt: new Date().toISOString() },
+    null,
+    2,
+  ),
+  'utf8',
+);
+
 const apiDir = path.join(rootDir, 'api');
 if (!fs.existsSync(apiDir)) {
   fs.mkdirSync(apiDir, { recursive: true });
