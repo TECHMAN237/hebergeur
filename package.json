@@ -6,7 +6,7 @@
   "scripts": {
     "prepare:visuals": "node scripts/prepare-visuals.js",
     "prebuild": "node scripts/prepare-visuals.js",
-    "dev": "node scripts/prepare-visuals.js && vite --port=3000 --host=0.0.0.0",
+    "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "node scripts/prepare-visuals.js && vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

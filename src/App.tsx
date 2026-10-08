@@ -43,7 +43,16 @@ export default function App() {
     return 'all';
   });
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [customBaseUrl, setCustomBaseUrl] = useState<string>('');
+  const [customBaseUrl, setCustomBaseUrl] = useState<string>(() => {
+    const envUrl = import.meta.env.VITE_PUBLIC_SITE_URL;
+    if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+      return envUrl.trim().replace(/\/+$/, '');
+    }
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return window.location.origin;
+    }
+    return '';
+  });
   const [showConfig, setShowConfig] = useState<boolean>(false);
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [showBuildAudit, setShowBuildAudit] = useState<boolean>(false);
@@ -89,15 +98,31 @@ export default function App() {
       });
     });
 
-    list.sort((a, b) =>
-      a.file.name.localeCompare(b.file.name, undefined, {
+    const isPriorityVisual = (name: string) =>
+      name.toLowerCase().startsWith('whatsapp-image-');
+
+    list.sort((a, b) => {
+      const aPrio = isPriorityVisual(a.file.name);
+      const bPrio = isPriorityVisual(b.file.name);
+      if (aPrio && !bPrio) return -1;
+      if (!aPrio && bPrio) return 1;
+      return a.file.name.localeCompare(b.file.name, undefined, {
         numeric: true,
         sensitivity: 'base',
-      }),
-    );
+      });
+    });
 
     return list;
   }, [folders, selectedFolder, searchQuery]);
+
+  const featuredVisuals = useMemo(() => {
+    const targetFolder =
+      folders.find((f) => f.name === 'visuels') || folders[0];
+    if (!targetFolder) return [];
+    return targetFolder.files
+      .filter((f) => f.name.toLowerCase().startsWith('whatsapp-image-'))
+      .map((file) => ({ file, folderName: targetFolder.name }));
+  }, [folders]);
 
   const copyAllUrls = async () => {
     if (displayedFiles.length === 0) return;
@@ -206,6 +231,40 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* Featured Visuals at the top of the site */}
+        {featuredVisuals.length > 0 && (
+          <section
+            id="featured-visuals-top"
+            className="mb-8 rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-stone-50 p-5 shadow-xs"
+          >
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  En tête du site • Nouveaux visuels ajoutés ({featuredVisuals.length})
+                </span>
+                <h2 className="text-sm sm:text-base font-semibold text-stone-900">
+                  Derniers visuels importés depuis la racine du projet
+                </h2>
+              </div>
+              <span className="font-mono text-xs text-stone-500">
+                Accès direct 100% public • Prêts pour Metricool
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {featuredVisuals.map(({ file, folderName }) => (
+                <VisualCard
+                  key={`featured-${folderName}-${file.name}`}
+                  file={file}
+                  folderName={folderName}
+                  baseUrl={customBaseUrl}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Real-time Build Audit & File Verification Panel */}
         {showBuildAudit && (
           <div

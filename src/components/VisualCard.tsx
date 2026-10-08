@@ -15,10 +15,12 @@ export function VisualCard({ file, folderName, baseUrl }: VisualCardProps) {
   const [imgError, setImgError] = useState(false);
   const [retryLevel, setRetryLevel] = useState(0);
 
-  // Clean unencoded base URL and formatted size
-  const cleanBase = baseUrl.replace(/\/+$/, '');
+  // Clean base URL (automatically uses current Vercel domain or custom domain)
+  const originFallback =
+    typeof window !== 'undefined' ? window.location.origin : '';
+  const cleanBase = (baseUrl || originFallback).replace(/\/+$/, '');
   const rawPath = file.url.startsWith('/') ? file.url : `/${file.url}`;
-  const encodedPath = encodeURI(decodeURI(rawPath));
+  const encodedPath = rawPath.replace(/\s+/g, '-');
   const encodedUrl = `${cleanBase}${encodedPath}`;
 
   const [currentImgSrc, setCurrentImgSrc] = useState<string>(() => encodedPath);

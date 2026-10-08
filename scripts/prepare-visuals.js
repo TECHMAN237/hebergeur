@@ -4,87 +4,142 @@ import path from 'node:path';
 const rootDir = process.cwd();
 const publicDir = path.join(rootDir, 'public');
 const targetDirs = ['visuels', 'visuels-lancement'];
+const imageRegex = /\.(jpe?g|png|webp|svg|gif|avif)$/i;
 
-// 1. Fallback import: if user deposited files in root `visuels/` or `assets/visuels/`
+export function toCanonicalKey(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  const base = path
+    .basename(filename, ext)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `${base || 'visuel'}${ext}`;
+}
+
+export function isPriorityVisual(name) {
+  return name.toLowerCase().startsWith('whatsapp-image-');
+}
+
+export function sortVisualNames(list) {
+  return list.sort((a, b) => {
+    const aPrio = isPriorityVisual(a);
+    const bPrio = isPriorityVisual(b);
+    if (aPrio && !bPrio) return -1;
+    if (!aPrio && bPrio) return 1;
+    return a.localeCompare(b, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  });
+}
+
+// 1. Import any visuals placed at project root `/` or alternate folders
 const alternateSources = [
+  rootDir,
   path.join(rootDir, 'visuels'),
   path.join(rootDir, 'assets', 'visuels'),
   path.join(rootDir, 'src', 'assets', 'visuels'),
 ];
 
-const destVisuels = path.join(publicDir, 'visuels');
-if (!fs.existsSync(destVisuels)) {
-  fs.mkdirSync(destVisuels, { recursive: true });
-}
-
-for (const alt of alternateSources) {
-  if (fs.existsSync(alt) && alt !== destVisuels) {
-    const items = fs.readdirSync(alt);
-    for (const item of items) {
-      const srcFile = path.join(alt, item);
-      const dstFile = path.join(destVisuels, item);
-      if (fs.statSync(srcFile).isFile() && !fs.existsSync(dstFile)) {
-        fs.copyFileSync(srcFile, dstFile);
-        console.log(`[sync] Copied from ${alt}/${item} to public/visuels/${item}`);
-      }
-    }
-  }
-}
-
-// 2. Generate multi-format aliases in all public visual directories
 for (const subDir of targetDirs) {
-  const dirPath = path.join(publicDir, subDir);
-  if (!fs.existsSync(dirPath)) continue;
+  const destDir = path.join(publicDir, subDir);
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
 
-  const files = fs.readdirSync(dirPath).filter((f) => {
-    const full = path.join(dirPath, f);
-    return (
-      fs.statSync(full).isFile() &&
-      !f.startsWith('.') &&
-      /\.(jpe?g|png|webp|svg|gif|avif)$/i.test(f)
-    );
-  });
+  for (const alt of alternateSources) {
+    if (fs.existsSync(alt) && alt !== destDir) {
+      const items = fs.readdirSync(alt);
+      for (const item of items) {
+        if (item.startsWith('.') || !imageRegex.test(item)) continue;
+        const srcFile = path.join(alt, item);
+        if (!fs.statSync(srcFile).isFile()) continue;
 
-  console.log(`[sync] Dossier public/${subDir} : ${files.length} fichiers bruts détectés.`);
-
-  for (const file of files) {
-    const srcPath = path.join(dirPath, file);
-    const ext = path.extname(file);
-    const baseName = path.basename(file, ext);
-
-    // Variants to create:
-    // 1. Lowercase with hyphens: "visuel-1.jpg"
-    // 2. Lowercase with space: "visuel 1.jpg"
-    // 3. Capitalized with hyphen: "Visuel-1.jpg"
-    // 4. Capitalized with space: "Visuel 1.jpg"
-    const lowerNoExt = baseName.toLowerCase();
-    const hyphenated = lowerNoExt.replace(/[\s_]+/g, '-');
-    const spaced = lowerNoExt.replace(/[-_]+/g, ' ');
-
-    const capHyphenated =
-      hyphenated.charAt(0).toUpperCase() + hyphenated.slice(1);
-    const capSpaced = spaced.charAt(0).toUpperCase() + spaced.slice(1);
-
-    const variants = new Set([
-      file,
-      `${hyphenated}${ext.toLowerCase()}`,
-      `${spaced}${ext.toLowerCase()}`,
-      `${capHyphenated}${ext.toLowerCase()}`,
-      `${capSpaced}${ext.toLowerCase()}`,
-    ]);
-
-    for (const variant of variants) {
-      const targetPath = path.join(dirPath, variant);
-      if (!fs.existsSync(targetPath)) {
-        try {
-          fs.copyFileSync(srcPath, targetPath);
-        } catch (err) {
-          console.warn(`[sync] Could not create alias ${variant}:`, err);
+        const canonical = toCanonicalKey(item);
+        const dstFile = path.join(destDir, canonical);
+        if (!fs.existsSync(dstFile)) {
+          fs.copyFileSync(srcFile, dstFile);
+          console.log(`[sync] Imported ${item} -> public/${subDir}/${canonical}`);
         }
       }
     }
   }
-
-  const finalFiles = fs.readdirSync(dirPath);
-  console.log(`[sync] Dossier public/${subDir} : ${finalFiles.length} fichiers au total (avec alias Vercel).`);
 }
+
+// 2. Normalize all files in public/visuels and public/visuels-lancement to clean Vercel-safe filenames
+let primaryVisualsList = [];
+
+for (const subDir of targetDirs) {
+  const dirPath = path.join(publicDir, subDir);
+  if (!fs.existsSync(dirPath)) continue;
+
+  const rawFiles = fs.readdirSync(dirPath).filter((f) => {
+    const full = path.join(dirPath, f);
+    return (
+      fs.statSync(full).isFile() &&
+      !f.startsWith('.') &&
+      imageRegex.test(f)
+    );
+  });
+
+  // Ensure every file has its clean canonical version on disk
+  for (const file of rawFiles) {
+    const canonical = toCanonicalKey(file);
+    const srcPath = path.join(dirPath, file);
+    const canonicalPath = path.join(dirPath, canonical);
+
+    if (file !== canonical) {
+      if (!fs.existsSync(canonicalPath)) {
+        fs.copyFileSync(srcPath, canonicalPath);
+      }
+      // Remove non-canonical duplicate (spaces, parens, uppercase) to avoid Git/Vercel case collisions
+      try {
+        fs.unlinkSync(srcPath);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const finalFiles = sortVisualNames(
+    fs.readdirSync(dirPath).filter((f) => {
+      const full = path.join(dirPath, f);
+      return (
+        fs.statSync(full).isFile() &&
+        !f.startsWith('.') &&
+        imageRegex.test(f)
+      );
+    }),
+  );
+
+  if (subDir === 'visuels') {
+    primaryVisualsList = finalFiles;
+  }
+
+  console.log(
+    `[sync] Dossier public/${subDir} prêt pour Vercel : ${finalFiles.length} visuels normalisés.`,
+  );
+}
+
+// 3. Remove any static public/api/visuels file that would shadow Vercel's Serverless Function /api/visuels.js
+const legacyStaticApiDir = path.join(publicDir, 'api');
+if (fs.existsSync(legacyStaticApiDir)) {
+  try {
+    fs.rmSync(legacyStaticApiDir, { recursive: true, force: true });
+  } catch {
+    // ignore
+  }
+}
+
+// 4. Write api/visuels-data.js so Vercel's serverless function always bundles the exact list
+const apiDir = path.join(rootDir, 'api');
+if (!fs.existsSync(apiDir)) {
+  fs.mkdirSync(apiDir, { recursive: true });
+}
+const apiDataPath = path.join(apiDir, 'visuels-data.js');
+fs.writeFileSync(
+  apiDataPath,
+  `// Auto-generated by scripts/prepare-visuals.js - Do not edit manually\nexport const visualFiles = ${JSON.stringify(primaryVisualsList, null, 2)};\n`,
+  'utf8',
+);
